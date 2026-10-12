@@ -1,0 +1,12 @@
+{
+  "name": "usage-meter",
+  "owner": {
+    "name": "DIG"
+  },
+  "plugins": [
+    {
+      "name": "usage-meter",
+      "source": "./"
+    }
+  ]
+}
