@@ -31,7 +31,8 @@ const format = (u: SessionUsage): Meter => {
     parts.push(`${LABEL[r.kind] ?? r.kind} ${r.percentUsed}%${fmtReset(r.resetsAt)}`)
     if (r.percentUsed >= 80) warn = true
   }
-  if (u.cost) parts.push(`$${u.cost.usd.toFixed(2)}`)
+  // 定額プラン（利用上限あり）では料金が出ないので、上限情報がないときだけ表示
+  if (u.cost && (u.rateLimits ?? []).length === 0) parts.push(`$${u.cost.usd.toFixed(2)}`)
   return { line: parts.length ? `使用量: ${parts.join(' ｜ ')}` : '使用量: 計測待ち', warn }
 }
 
@@ -43,10 +44,7 @@ export const register: Register = on => {
     try {
       const m = format(await $.session.usage())
       await update($, meter, () => m)
-      $.ui.status(m.line)
-    } catch {
-      $.ui.status(WAITING.line)
-    }
+    } catch {}
     return r
   })
 
@@ -55,7 +53,6 @@ export const register: Register = on => {
     try {
       const m = format(await $.session.usage())
       await update($, meter, () => m)
-      $.ui.status(m.line)
     } catch {}
     return r
   })
@@ -63,7 +60,6 @@ export const register: Register = on => {
   on('session.measure', async ($, e, next) => {
     const m = format({ startedAt: 0, context: e.context, rateLimits: e.rateLimits, cost: e.cost })
     await update($, meter, () => m)
-    $.ui.status(m.line)
     return next(e)
   })
 
